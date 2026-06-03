@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Интерактив: линейная и квадратичная регрессия</title>
+  <meta name="description" content="Интерактивная практика по линейной и квадратичной регрессии без библиотек.">
+  <link rel="stylesheet" href="app.css">
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [["\\(", "\\)"]],
+        displayMath: [["\\[", "\\]"]]
+      },
+      svg: {
+        fontCache: "global"
+      }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+</head>
+<body>
+<main class="app-shell">
+  <header class="app-header">
+    <a class="back-link" href="index.html">← Теория</a>
+    <p class="eyebrow">Интерактивная практика</p>
+    <h1>Двигай точки и смотри, как учится модель</h1>
+    <p>Добавляй, выбирай, перетаскивай и удаляй точки. Линия или парабола сразу пересчитывают коэффициенты, residuals и метрики.</p>
+  </header>
+
+  <section class="card graph-card" id="graph">
+    <div class="card-title-row">
+      <div>
+        <span class="step">1</span>
+        <h2>График</h2>
+      </div>
+      <span class="point-counter" id="pointsCountText">Точек: 0</span>
+    </div>
+    <canvas id="regressionCanvas" aria-label="Интерактивный график регрессии"></canvas>
+    <div class="canvas-help">Нажми по пустому месту, чтобы добавить точку. Нажми по точке, чтобы выбрать её. Зажми и двигай точку, чтобы увидеть пересчёт модели.</div>
+  </section>
+
+  <section class="card control-card" id="controls">
+    <div class="control-row">
+      <div class="control-block">
+        <span class="control-label">Тип модели</span>
+        <div class="segmented-control" aria-label="Тип модели">
+          <label><input type="radio" name="modelType" value="linear" checked><span>Линия</span></label>
+          <label><input type="radio" name="modelType" value="quadratic"><span>Парабола</span></label>
+        </div>
+      </div>
+
+      <label class="toggle control-toggle">
+        <input id="residualsToggle" type="checkbox" checked>
+        <span>Показывать residuals</span>
+      </label>
+
+      <label class="select-field">
+        Учебный набор
+        <select id="datasetSelect">
+          <option value="simple">Простой линейный</option>
+          <option value="noisy">Шумный</option>
+          <option value="outlier">С выбросом</option>
+          <option value="nonlinear">Нелинейный</option>
+          <option value="custom">Ручной набор</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="button-grid compact">
+      <button id="randomLinearBtn" type="button">Случайные линейные</button>
+      <button id="randomQuadraticBtn" type="button">Случайные парабола</button>
+      <button id="addOutlierBtn" type="button">Добавить выброс</button>
+      <button id="deleteSelectedBtn" class="danger-soft" type="button">Удалить выбранную</button>
+      <button id="clearBtn" type="button">Очистить всё</button>
+      <button id="resetBtn" type="button">Сбросить пример</button>
+    </div>
+    <p class="small-text">На desktop выбранную точку можно удалить клавишей Delete или Backspace.</p>
+  </section>
+
+  <section class="info-grid">
+    <div class="info-column">
+      <article class="card model-card">
+        <div class="card-title-row">
+          <div>
+            <span class="step">2</span>
+            <h2>Текущая модель</h2>
+          </div>
+        </div>
+        <div class="formula-card" id="lineFormula" aria-live="polite">\[\hat{y}=ax+b\]</div>
+        <div class="value-list" id="coefficientValues"></div>
+        <p class="small-text" id="modelHint">Линейная модель ищет прямую с минимальной суммой квадратов ошибок.</p>
+      </article>
+
+      <article class="card" id="predict">
+        <div class="card-title-row">
+          <div>
+            <span class="step">5</span>
+            <h2>Прогноз</h2>
+          </div>
+        </div>
+        <div class="field">
+          <label for="predictInput">Введи площадь x, м²</label>
+          <input id="predictInput" type="number" value="65" min="0" max="100" step="1">
+        </div>
+        <div class="prediction-card">
+          <span>Предсказанное значение \(\hat{y}\)</span>
+          <strong id="predictionValue" aria-live="polite">—</strong>
+          <code id="predictionFormula">Нужна обученная модель</code>
+        </div>
+      </article>
+    </div>
+
+    <article class="card metrics-card" id="metrics">
+      <div class="card-title-row">
+        <div>
+          <span class="step">3</span>
+          <h2>Метрики</h2>
+        </div>
+      </div>
+      <div class="metric-list">
+        <div class="metric-row">
+          <div><strong>RSS</strong><div class="mini-formula">\[RSS=\sum_{i=1}^{n}(y_i-\hat{y}_i)^2\]</div></div>
+          <span id="rssValue">—</span>
+        </div>
+        <div class="metric-row">
+          <div><strong>MSE</strong><div class="mini-formula">\[MSE=\frac{RSS}{n}\]</div></div>
+          <span id="mseValue">—</span>
+        </div>
+        <div class="metric-row">
+          <div><strong>RMSE</strong><div class="mini-formula">\[RMSE=\sqrt{MSE}\]</div></div>
+          <span id="rmseValue">—</span>
+        </div>
+        <div class="metric-row">
+          <div><strong>MAE</strong><div class="mini-formula">\[MAE=\frac{1}{n}\sum_{i=1}^{n}|y_i-\hat{y}_i|\]</div></div>
+          <span id="maeValue">—</span>
+        </div>
+        <div class="metric-row">
+          <div><strong>R²</strong><div class="mini-formula">\[R^2=1-\frac{RSS}{TSS}\]</div></div>
+          <span id="r2Value">—</span>
+        </div>
+      </div>
+      <div class="explain-box" id="metricExplanation">R² сравнивает нашу модель с прогнозом “всегда среднее y”.</div>
+      <div class="comparison-grid">
+        <article><span>Линейная</span><strong id="linearCompare">—</strong></article>
+        <article><span>Парабола</span><strong id="quadraticCompare">—</strong></article>
+      </div>
+    </article>
+
+    <div class="info-column">
+      <article class="card selected-card" id="selectedPointPanel">
+        <div class="card-title-row">
+          <div>
+            <span class="step">4</span>
+            <h2>Выбранная точка</h2>
+          </div>
+          <span id="selectedBadge" class="badge">Нет выбора</span>
+        </div>
+        <div id="selectedDetails" class="selected-details empty">Выберите точку на графике.</div>
+        <div class="point-edit-grid">
+          <label>
+            x
+            <input id="selectedXInput" type="number" min="0" max="100" step="0.5" disabled>
+          </label>
+          <label>
+            y
+            <input id="selectedYInput" type="number" min="0" max="12" step="0.1" disabled>
+          </label>
+        </div>
+        <button id="selectedDeleteBtn" class="danger-soft wide-action" type="button">Удалить выбранную</button>
+      </article>
+
+    </div>
+
+    <article class="card explanation-card" id="explain">
+      <div class="card-title-row">
+        <div>
+          <span class="step">6</span>
+          <h2>Что сейчас происходит?</h2>
+        </div>
+      </div>
+      <div id="liveExplanation" class="explanation-stack"></div>
+      <details id="matrixDetails">
+        <summary>Показать матричный расчёт для параболы</summary>
+        <div id="matrixExplanation" class="matrix-box"></div>
+      </details>
+    </article>
+  </section>
+
+  <nav class="bottom-nav" aria-label="Быстрая навигация">
+    <a href="#graph">График</a>
+    <a href="#controls">Кнопки</a>
+    <a href="#metrics">Метрики</a>
+  </nav>
+</main>
+<script src="app.js"></script>
+</body>
+</html>
