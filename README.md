@@ -6,6 +6,8 @@
 
 Проект сделан на чистом HTML/CSS/JS. Backend, npm, React, TypeScript и сборщики не используются.
 
+**Рабочая версия приложения:** [открыть Linear Regression Lab](https://ufpngh.github.io/linear_regression_coursework/)
+
 ## Что входит в проект
 
 - `index.html` — обучающая статья для новичка.
