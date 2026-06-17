@@ -18,7 +18,6 @@
 * MathJax через CDN — рендер LaTeX-формул в статье и приложении
 * `datasets/` — CSV-датасеты для демонстраций
 * `notebooks/linear_regression_demo.ipynb` — учебная Jupyter-тетрадка
-* `docs/CODE_WALKTHROUGH.md` — объяснение кода для подготовки к защите
 * `requirements.txt` — зависимости для notebook
 
 ## Что реализовано
@@ -114,8 +113,6 @@ linear_regression_coursework/
 │   └── real_estate_realistic.csv
 ├── notebooks/
 │   └── linear_regression_demo.ipynb
-├── docs/
-│   └── CODE_WALKTHROUGH.md
 ├── requirements.txt
 └── README.md
 ```
